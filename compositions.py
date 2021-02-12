@@ -7,7 +7,7 @@ Updated 2 januari 2021
 
 # Package application imports
 
-from geoimagine.support.karttur_dt import Today
+from geoimagine.support import Today
         
 def InsertCompDef(session, comp, title=False, label=False):
     ''' Insert composition definitions

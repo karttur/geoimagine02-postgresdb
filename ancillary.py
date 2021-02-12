@@ -4,12 +4,6 @@ Created on 8 mars 2018
 @author: thomasgumbricht
 '''
 
-# Standard library imports
-
-import netrc
-
-from base64 import b64encode
-
 # Package application imports
 
 from geoimagine.postgresdb import PGsession
@@ -27,6 +21,9 @@ class ManageAncillary(PGsession):
         
         HOST = 'karttur'
         
+        query = self._GetCredentials( HOST )
+        
+        '''
         secrets = netrc.netrc()
         
         username, account, password = secrets.authenticators( HOST )
@@ -35,8 +32,10 @@ class ManageAncillary(PGsession):
         
         #create a query dictionary for connecting to the Postgres server
         query = {'db':db,'user':username,'pswd':pswd}
+        '''
         
         #Connect to the Postgres Server
+        
         self.session = PGsession.__init__(self,query,'ManageAncillary')
         
         

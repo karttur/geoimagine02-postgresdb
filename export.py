@@ -4,12 +4,6 @@ Created on 21 Oct 2018
 @author: thomasgumbricht
 '''
 
-# Standard library imports
-
-import netrc
-
-from base64 import b64encode
-
 # Package application imports
 
 from geoimagine.postgresdb import PGsession
@@ -20,25 +14,15 @@ class ManageExport(PGsession):
     '''
     
     def __init__(self):
-        """The constructor connects to the database"""
+        """ The constructor connects to the database"""
         
-        HOST = 'manageexport'
         HOST = 'karttur'
         
-        secrets = netrc.netrc()
-        
-        username, account, password = secrets.authenticators( HOST )
-        
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        
-        query = {'db':'postgres','user':username,'pswd':pswd}
-        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageExport')
-
-
+        
     def _SelectDefaultRegion(self,defregid):
         '''
         '''

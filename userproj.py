@@ -4,11 +4,14 @@ Created on 21 Nov 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
-from base64 import b64encode
-import netrc
-from support import Today
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
+
+
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
+
+from geoimagine.support import Today
 
 class ManageUserProj(PGsession):
     '''

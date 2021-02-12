@@ -10,8 +10,6 @@ from geoimagine.postgresdb import PGsession
 
 from geoimagine.postgresdb.compositions import InsertLayer, DeleteLayer, SelectComp, DeleteComposition
 
-from geoimagine.support.karttur_dt import Today
-
 class ManageMODIS(PGsession):
     '''
     DB support for setting up processes
