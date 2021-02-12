@@ -4,12 +4,11 @@ Created on 10 Oct 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
-from base64 import b64encode
-import netrc
+# Package application imports
 
-#from geoimagine.support.karttur_dt import Today
+from geoimagine.postgresdb import PGsession
+
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
 
 class ManageSMAP(PGsession):
     '''
@@ -17,14 +16,12 @@ class ManageSMAP(PGsession):
     '''
 
     def __init__(self, db):
-        """The constructor connects to the database"""
-        #HOST = 'managesmap'
+        """ The constructor connects to the database"""
+        
         HOST = 'karttur'
-        secrets = netrc.netrc()
-        username, account, password = secrets.authenticators( HOST )
-        pswd = b64encode(password.encode())
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':db,'user':username,'pswd':pswd}
+        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageSMAP')
 

@@ -4,9 +4,9 @@ Created on 21 feb. 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from base64 import b64encode
-import netrc
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
 
 class SelectUser(PGsession):
     '''
@@ -14,18 +14,13 @@ class SelectUser(PGsession):
     '''
 
     def __init__(self,pgdb):
-        """The constructor connects to the database"""
-        #Connect to the Postgres Server with 'readuser
-        #HOST = 'localhost89'
-        HOST = 'userread'
+        """ The constructor connects to the database"""
+        
         HOST = 'karttur'
-        secrets = netrc.netrc()
-        dbuser, account, dbuserpswd = secrets.authenticators( HOST )
-        dbuserpswd = b64encode(dbuserpswd.encode())
-        #create a query dictionary for connecting to the Postgres server
         
-        query = {'db':pgdb,'user':dbuser,'pswd':dbuserpswd}
-        
+        query = self._GetCredentials( HOST )
+
+        #Connect to the Postgres Server       
         PGsession.__init__(self,query,'SelectUser')
 
     def _SelectUserCreds(self, userid, pswd):

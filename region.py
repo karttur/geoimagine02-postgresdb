@@ -4,34 +4,23 @@ Created on 23 feb. 2018
 @author: thomasgumbricht
 '''
 
+# Package application imports
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
-from base64 import b64encode
-import netrc
-import string
+from geoimagine.postgresdb import PGsession
 
-#from geoimagine.support.karttur_dt import Today
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
 
 class ManageRegion(PGsession):
     '''
     DB support for managing regions
     '''
     def __init__(self, db, verbose = 1):
-        """The constructor connects to the database"""
+        """ The constructor connects to the database"""
         
-        HOST = 'manageregion'
         HOST = 'karttur'
         
-        secrets = netrc.netrc()
-        
-        username, account, password = secrets.authenticators( HOST )
-        
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':db,'user':username,'pswd':pswd}
-        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageRegion')
         

@@ -15,14 +15,12 @@ class ManageUserProj(PGsession):
     DB support for setting up processes
     '''
     def __init__(self):
-        """The constructor connects to the database"""
-        HOST = 'ManageUserProj'
+        """ The constructor connects to the database"""
+        
         HOST = 'karttur'
-        secrets = netrc.netrc()
-        username, account, password = secrets.authenticators( HOST )
-        pswd = b64encode(password.encode())
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':'postgres','user':username,'pswd':pswd}
+        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'UserLocale')
 

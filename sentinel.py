@@ -4,12 +4,13 @@ Created on 8 juni 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp, SelectLayer
-from base64 import b64encode
-import netrc
+# Package application imports
 
-from support.karttur_dt import Today
+from geoimagine.postgresdb import PGsession
+
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp, SelectLayer
+
+from geoimagine.support import Today
 
 class ManageSentinel(PGsession):
     '''
@@ -17,16 +18,12 @@ class ManageSentinel(PGsession):
     '''
 
     def __init__(self):
-        """The constructor connects to the database"""
-        HOST = 'managesentinel'
+        """ The constructor connects to the database"""
+        
         HOST = 'karttur'
-        secrets = netrc.netrc()
+        
+        query = self._GetCredentials( HOST )
 
-        username, account, password = secrets.authenticators( HOST )
-
-        pswd = b64encode(password.encode())
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':'postgres','user':username,'pswd':pswd}
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageSentinel')
 

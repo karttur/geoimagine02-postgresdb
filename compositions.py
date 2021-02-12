@@ -5,7 +5,9 @@ Updated 2 januari 2021
 @author: thomasgumbricht
 '''
 
-from support.karttur_dt import Today
+# Package application imports
+
+from geoimagine.support.karttur_dt import Today
         
 def InsertCompDef(session, comp, title=False, label=False):
     ''' Insert composition definitions
@@ -580,4 +582,4 @@ def SelectLayer(session, compQ):
             
             print ('query',compQ)
             
-            BALLE 
+            SNULLE

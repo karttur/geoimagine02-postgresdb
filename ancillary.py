@@ -4,13 +4,18 @@ Created on 8 mars 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
- 
-from base64 import b64encode
+# Standard library imports
+
 import netrc
 
-#from support.karttur_dt import Today
+from base64 import b64encode
+
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
+
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
+ 
 
 class ManageAncillary(PGsession):
     '''

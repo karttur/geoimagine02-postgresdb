@@ -3,10 +3,10 @@ Created on 22 feb. 2018
 
 @author: thomasgumbricht
 '''
-from postgresdb import PGsession
-from base64 import b64encode
-import netrc
 
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
 
 class ManageLayout(PGsession):
     '''
@@ -14,23 +14,14 @@ class ManageLayout(PGsession):
     '''
 
     def __init__(self, db):
-        """The constructor connects to the database"""
-        
-        #HOST = 'managelayout'
+        """ The constructor connects to the database"""
         
         HOST = 'karttur'
         
-        secrets = netrc.netrc()
-        
-        username, account, password = secrets.authenticators( HOST )
-        
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':db,'user':username,'pswd':pswd}
-        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
-        self.session = PGsession.__init__(self,query)
+        self.session = PGsession.__init__(self,query, 'ManageLayout')
 
     def _ManageRasterPalette(self, queryD, colorD, overwrite, delete):
         '''

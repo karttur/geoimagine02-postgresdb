@@ -4,13 +4,15 @@ Created on 21 Oct 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-
-from base64 import b64encode
+# Standard library imports
 
 import netrc
 
-#from support.karttur_dt import Today
+from base64 import b64encode
+
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
 
 class ManageExport(PGsession):
     '''

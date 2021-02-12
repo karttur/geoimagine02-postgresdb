@@ -4,13 +4,9 @@ Created on 29 Jun 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-#from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
-from base64 import b64encode
-import netrc
+# Package application imports
 
-from support.karttur_dt import Today
-
+from geoimagine.postgresdb import PGsession
 
 class ManageSoilMoisture(PGsession):
     '''
@@ -18,16 +14,12 @@ class ManageSoilMoisture(PGsession):
     '''
 
     def __init__(self):
-        """The constructor connects to the database"""
-        HOST = 'managesoilmoisture'
+        """ The constructor connects to the database"""
+        
         HOST = 'karttur'
-        secrets = netrc.netrc()
+        
+        query = self._GetCredentials( HOST )
 
-        username, account, password = secrets.authenticators( HOST )
-        print (username, account, password)
-        pswd = b64encode(password.encode())
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':'postgres','user':username,'pswd':pswd}
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageSoilMoisture')
 

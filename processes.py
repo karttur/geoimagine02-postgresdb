@@ -4,13 +4,11 @@ Created on 21 feb. 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
+# Package application imports
 
-from base64 import b64encode
+from geoimagine.postgresdb import PGsession
 
-import netrc
-
-from support import Today
+from geoimagine.support import Today
 
 class SelectProcess(PGsession):
     '''
@@ -18,22 +16,12 @@ class SelectProcess(PGsession):
     '''
 
     def __init__(self, db):
-        """The constructor connects to the database"""
-        
-        #HOST = 'localhost99'
-        
-        HOST = 'processmanage'
+        """ The constructor connects to the database"""
         
         HOST = 'karttur'
-        secrets = netrc.netrc()
         
-        username, account, password = secrets.authenticators( HOST )
+        query = self._GetCredentials( HOST )
 
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':db,'user':username,'pswd':pswd}
-   
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'SelectProcess')
         
@@ -113,19 +101,12 @@ class ManageProcess(PGsession):
     '''
 
     def __init__(self, db):
-        """The constructor connects to the database"""
+        """ The constructor connects to the database"""
         
         HOST = 'karttur'
         
-        secrets = netrc.netrc()
-        
-        username, account, password = secrets.authenticators( HOST )
-        
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':db,'user':username,'pswd':pswd}
-        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageProcess')
 
@@ -214,8 +195,7 @@ class ManageProcess(PGsession):
                     self.cursor.execute(sql)
                     
                     self.conn.commit()
-        
-            
+              
         # Add todays date to queryD 
         queryD['today'] = Today()
         

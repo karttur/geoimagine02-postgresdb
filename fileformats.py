@@ -3,10 +3,10 @@ Created on 23 feb. 2018
 
 @author: thomasgumbricht
 '''
-from postgresdb import PGsession
-from base64 import b64encode
-import netrc
 
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
 
 
 class SelectFileFormats(PGsession):
@@ -15,19 +15,12 @@ class SelectFileFormats(PGsession):
     '''
 
     def __init__(self):
-        """The constructor connects to the database"""
+        """ The constructor connects to the database"""
         
-        HOST = 'formatread'
+        HOST = 'karttur'
+        
+        query = self._GetCredentials( HOST )
 
-        secrets = netrc.netrc()
-        
-        username, account, password = secrets.authenticators( HOST )
-        
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':'postgres','user':username,'pswd':pswd}
-        
         #Connect to the Postgres Server
         PGsession.__init__(self,query,'SelectFileFormats')
 

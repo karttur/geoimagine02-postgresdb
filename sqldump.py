@@ -4,12 +4,9 @@ Created on 1 apr. 2019
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
-from base64 import b64encode
-import netrc
+# Package application imports
 
-#from geoimagine.support.karttur_dt import Today
+from geoimagine.postgresdb import PGsession
 
 class ManageSqlDumps(PGsession):
     '''
@@ -17,14 +14,12 @@ class ManageSqlDumps(PGsession):
     '''
 
     def __init__(self):
-        """The constructor connects to the database"""
-        HOST = 'managesql'
+        """ The constructor connects to the database"""
+        
         HOST = 'karttur'
-        secrets = netrc.netrc()
-        username, account, password = secrets.authenticators( HOST )
-        pswd = b64encode(password.encode())
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':'postgres','user':username,'pswd':pswd}
+        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageSMAP')
 
@@ -35,10 +30,3 @@ class ManageSqlDumps(PGsession):
         #recs = self.session._SelectAllTableRecs(query)
         self.cursor.execute("SELECT %(items)s FROM %(schematab)s;" %query)
         return self.cursor.fetchall()
-
-    def _SelectUserSecrets(self):
-        HOST = 'managesql'
-        HOST = 'karttur'
-        secrets = netrc.netrc()
-        username, account, password = secrets.authenticators( HOST )
-        return (username, account, password)

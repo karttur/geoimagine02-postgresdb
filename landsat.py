@@ -4,14 +4,17 @@ Created on 7 Oct 2018
 @author: thomasgumbricht
 '''
 
-from postgresdb import PGsession
-from postgresdb.compositions import InsertLayer, SelectComp
-from base64 import b64encode
-import netrc
+# Standard library imports
+
 from os import path, makedirs, remove
+
 from shutil import move
 
-#from support.karttur_dt import Today
+# Package application imports
+
+from geoimagine.postgresdb import PGsession
+
+from geoimagine.postgresdb.compositions import InsertLayer, SelectComp
 
 class ManageLandsat(PGsession):
     '''
@@ -19,19 +22,12 @@ class ManageLandsat(PGsession):
     '''
 
     def __init__(self):
-        """The constructor connects to the database"""
+        """ The constructor connects to the database"""
         
-        HOST = 'managelandsat'
-
-        secrets = netrc.netrc()
-
-        username, account, password = secrets.authenticators( HOST )
-
-        pswd = b64encode(password.encode())
+        HOST = 'karttur'
         
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':'postgres','user':username,'pswd':pswd}
-        
+        query = self._GetCredentials( HOST )
+
         #Connect to the Postgres Server
         self.session = PGsession.__init__(self,query,'ManageLandsat')
 
