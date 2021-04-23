@@ -251,6 +251,21 @@ def InsertLayer(session,layer,overwrite,delete):
 
         session._CheckInsertSingleRecord(queryD, layer.comp.system, 'layers')
         
+    def InsertEASELayer():
+        '''
+        '''
+        
+        queryD = {'compid': layer.comp.compid, 'source':layer.comp.source ,'product':layer.comp.product, 'suffix':layer.comp.suffix, 
+                  'acqdatestr':layer.datum.acqdatestr, 'xtile':layer.locus.xtile, 'vtile':layer.locus.ytile, 'xytile':layer.locus.locus}
+        
+        if layer.datum.acqdate:
+        
+            queryD['acqdate'] = layer.datum.acqdate
+            
+            queryD['doy'] = layer.datum.doy   
+
+        session._CheckInsertSingleRecord(queryD, layer.comp.system, 'layers')
+        
     def InsertSpecimenLayer():
         '''
         '''
@@ -305,6 +320,10 @@ def InsertLayer(session,layer,overwrite,delete):
     elif layer.comp.system == 'sentinel':
         
         InsertSentinelLayer()
+        
+    elif layer.comp.system[0:4] == 'ease':
+        
+        InsertEaseLayer()
         
     else:
         
@@ -456,25 +475,26 @@ def DeleteComposition(session,schema,compD):
         
     session.conn.commit()
                      
-def SelectCompAlt(session,compQ,inclL):
+def SelectCompleteComp(session, system, queryD, searchItemL):
     '''
     '''
+    queryD['system'] = system
     
     querystem = 'SELECT C.source, C.product, B.content, B.layerid, B.prefix, C.suffix, C.masked, C.cellnull, C.celltype, B.measure, B.scalefac, B.offsetadd, B.dataunit '   
     
-    query ='FROM %(system)s.compdef AS B ' %compQ
+    query ='FROM %(system)s.compdef AS B ' %queryD
     
     querystem = '%s %s ' %(querystem, query)
     
-    query ='INNER JOIN %(system)s.compprod AS C ON (B.compid = C.compid)' %compQ
+    query ='INNER JOIN %(system)s.compprod AS C ON (B.compid = C.compid)' %queryD
     
     querystem = '%s %s ' %(querystem, query)
     
     selectQuery = {}
     
-    for item in inclL:
+    for item in searchItemL:
     
-        selectQuery[item] = {'col': item, 'op':'=', 'val': compQ[item]}
+        selectQuery[item] = {'col': item, 'op':'=', 'val': queryD[item]}
 
     wherestatement = session._DictToSelect(selectQuery)
 
@@ -482,18 +502,35 @@ def SelectCompAlt(session,compQ,inclL):
     
     session.cursor.execute(querystem)
     
-    records = session.cursor.fetchall()
-
-    return records ,querystem
+    record = session.cursor.fetchone()
+    
+    if record != None:
         
-def SelectComp(session, compQ, verbose=0):
-    params = ['source', 'product', 'content', 'layerid', 'prefix', 'suffix', 'masked', 'cellnull', 'celltype', 'measure', 'scalefac', 'offsetadd', 'dataunit']
-    inclL = ['content','layerid']
+        params = ['source', 'product', 'content', 'layerid', 'prefix', 'suffix', 'masked', 'cellnull', 'celltype', 'measure', 'scalefac', 'offsetadd', 'dataunit'] 
 
-    records,query = SelectCompAlt(session,compQ,inclL)
+        return dict(zip(params,record))
+            
+    return record
+
+def SelectCompAlt(session,compQ,inclL):
+    '''
+    '''
+    exit('replaced with _SelectCompleteComposition')
+        
+def SelectComp(session, compQ):
+    '''
+    '''
+    params = ['source', 'product', 'content', 'layerid', 'prefix', 'suffix', 'masked', 'cellnull', 'celltype', 'measure', 'scalefac', 'offsetadd', 'dataunit']
+    
+    searhItemL = ['content','layerid']
+
+    records,query = SelectCompAlt(session,compQ,searhItemL)
+    
     if len(records) == 1:
+        
         recD = dict(zip(params,records[0]))
-        if verbose > 1:
+        
+        if self.verbose > 1:
             print ('recD',recD)
             print ('compQ',compQ)
         if 'source' in compQ and not recD['source'] == compQ['source']:
@@ -508,9 +545,13 @@ def SelectComp(session, compQ, verbose=0):
             print ('Error in suffix',recD['suffix'], compQ['suffix'])
             print (query)
             SNULLE
+            
         return recD
+    
     else:
+        
         inclL = ['content','layerid', 'source', 'product', 'suffix']
+        
         records,query = SelectCompAlt(session,compQ,inclL)
         if len(records) == 1:
             recD = dict(zip(params,records[0]))
@@ -551,8 +592,10 @@ def SelectSystemCompOnRegionIdOld(session, compQ, inclL):
     print ('query',compQ)
     
     SNULLEBULLE
+    
+    
             
-def SelectLayer(session, compQ):
+def SelectLayerOld(session, compQ):
     '''
     '''
     

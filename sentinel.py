@@ -8,7 +8,7 @@ Created on 8 juni 2018
 
 from geoimagine.postgresdb import PGsession
 
-from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp, SelectLayer
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
 
 from geoimagine.support import Today
 
@@ -83,10 +83,6 @@ class ManageSentinel(PGsession):
 
     def _SelectLayer(self,system,queryD,paramL):
         return self._SingleSearch(queryD,paramL,system,'layers',True)
-
-    def _SelectLayerOld(self,system,comp):
-        comp['system'] = system
-        return SelectLayer(self, comp)
 
     def _SelectLayerOnLocus(self,system,queryD,paramL):
         rec = self._SingleSearch(queryD, paramL, system,' layers')

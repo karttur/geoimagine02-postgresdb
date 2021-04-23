@@ -10,24 +10,211 @@ from geoimagine.postgresdb import PGsession
 
 from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
 
-class ManageRegion(PGsession):
+class CommonRegions:
     '''
-    DB support for managing regions
     '''
+    
+    def _SelectRegionTiles(self, regtype, schema, mask, paramL):
+        '''
+        ''' 
+        
+        if regtype == 'siteid':
+        
+            queryD = {'regionid':mask, 'regiontype':'site'}
+
+            tiles = self._MultiSearch(queryD, paramL, schema, 'regions')
+            
+            if len(tiles) > 0:
+            
+                return tiles
+        
+        elif regtype == 'tractid':
+        
+            queryD = {'regionid':mask, 'regiontype':'tract'}
+
+            tiles = self._MultiSearch(queryD, paramL, schema, 'regions')
+            
+            if len(tiles) > 0:
+            
+                return tiles
+        
+        elif regtype == 'regionid':
+            
+            queryD = {'regionid':mask, 'regiontype':'default'}
+            
+            tiles = self._MultiSearch(queryD, paramL, schema, 'regions')
+            
+            if len(tiles) > 0:
+            
+                return tiles
+            
+        else:
+            
+            print (regtype)
+            exit('Unrecognized regtype in postgresdb.regions._SeletRegionTiles')
+
+
+    def _InsertRegionTileMovedToRegionCOPIEDHERETOCOMAPRE(self, query):
+        '''
+        '''
+        
+        if query['table'] == 'regions':
+            
+            sql = "SELECT * FROM %(system)s.%(table)s WHERE regionid = '%(regionid)s';"  %query
+            
+            self.cursor.execute( sql )
+            
+        elif query['table'] == 'tracts':
+            
+            sql = "SELECT * FROM %(system)s.%(table)s WHERE tractid = '%(regionid)s';"  %query
+            
+            self.cursor.execute( sql)
+
+        record = self.cursor.fetchone()
+        
+        if record == None:
+            
+            print ( sql )
+            
+            warnstr = 'WARNING can not add tile to region %(easegrid)s, no such region in system  %(system)s and tabel %(table)s' %query
+            
+            print (warnstr)
+            
+            BALLE
+            
+            return
+        
+        sql = "SELECT * FROM %(easegrid)s.regions WHERE xtile = %(x)s AND ytile = %(y)s AND regiontype = '%(regiontype)s' AND regionid = '%(regionid)s';" %query
+        
+        self.cursor.execute( sql )
+        
+        record = self.cursor.fetchone()
+
+        if record == None and not query['delete']:
+            
+            sql = "INSERT INTO %(easegrid)s.regions (regionid, regiontype, xtile, ytile)\
+            VALUES ('%(regionid)s', '%(regiontype)s', %(x)d, %(y)d)" %query 
+            
+            self.cursor.execute( sql )       
+                    
+            #(query['easegrid'],query['regionid'], query['regiontype'],query['x'], query['y']))
+            
+            self.conn.commit()
+        
+        elif record and query['delete']:
+        
+            self.cursor.execute("DELETE FROM easegrid.regions WHERE easegrid = %(easegrid)s AND xtile = '%(x)s' AND ytile = '%(y)s' AND regiontype = '%(regiontype)s'AND regionid = '%(regionid)s';" %query)
+            
+            self.conn.commit()
+
+
+    def _InsertRegionTile(self, query):
+        '''
+        '''
+        '''
+        if query['table'] == 'regions':
+            
+            sql = "SELECT * FROM %(system)s.%(table)s WHERE regionid = '%(regionid)s';"  %query
+            
+            self.cursor.execute( sql )
+            
+        elif query['table'] == 'tracts':
+            
+            sql = "SELECT * FROM %(system)s.%(table)s WHERE tractid = '%(regionid)s';"  %query
+            
+            self.cursor.execute( sql)
+
+        record = self.cursor.fetchone()
+        
+        if record == None:
+            
+            print ( sql )
+            
+            warnstr = 'WARNING can not add tile to system %(system)s, no such region in system  %(system)s and table %(table)s' %query
+            
+            exit (warnstr)
+        '''
+                            
+        if query['system'] == 'modis':
+            
+            sql = "SELECT * FROM modis.regions WHERE htile = %(htile)s AND vtile = %(vtile)s AND regiontype = '%(regiontype)s' AND regionid = '%(regionid)s';" %query
+        
+        elif query['system'][0:4] == 'ease':
+            
+            sql = "SELECT * FROM %(system)s.regions WHERE xtile = %(xtile)s AND ytile = %(ytile)s AND regiontype = '%(regiontype)s' AND regionid = '%(regionid)s';" %query
+ 
+        else:
+            
+            print (query)
+
+            exitstr = 'add system %(system)s in postgresdb.region._InsertRegionTile' %query
+  
+            exit(exitstr) 
+            
+        self.cursor.execute( sql )
+        
+        record = self.cursor.fetchone()
+
+        if record == None and not query['delete']:
+            
+            if query['system'] == 'modis':
+                
+                sql = "INSERT INTO %(system)s.regions (regionid, regiontype, htile, vtile)\
+                        VALUES ('%(regionid)s', '%(regiontype)s', %(htile)d, %(vtile)d)" %query 
+        
+            elif query['system'][0:4] == 'ease':
+                
+                sql = "INSERT INTO %(system)s.regions (regionid, regiontype, xtile, ytile)\
+                        VALUES ('%(regionid)s', '%(regiontype)s', %(xtile)d, %(ytile)d)" %query 
+                                 
+            self.cursor.execute( sql )       
+                                
+            self.conn.commit()
+    
+        elif record and query['delete']:
+            
+            if query['system'] == 'modis':
+                
+                sql = "DELETE FROM %(system)s.regions WHERE  htile = '%(htile)s' AND vtile = '%(vtile)s' AND regiontype = '%(regiontype)s'AND regionid = '%(regionid)s';" %query
+    
+            elif query['system'][0:4] == 'ease':
+                
+                sql = "DELETE FROM %(system)s.regions WHERE  xtile = '%(xtile)s' AND ytile = '%(ytile)s' AND regiontype = '%(regiontype)s'AND regionid = '%(regionid)s';" %query
+   
+            self.cursor.execute( sql )
+            
+            self.conn.commit()
+        
+class ManageRegion(PGsession, CommonRegions):
+    '''
+    DB support for setting up processes
+    '''
+
     def __init__(self, db, verbose = 1):
         """ The constructor connects to the database"""
         
+        
+        PGsession.__init__(self,'ManageMODIS')
+                
+        # Initiate the region common processes
+        CommonRegions.__init__(self)
+                
+        # Set the HOST name for this process
         HOST = 'karttur'
         
+        # Get the credentioals for the HOST
         query = self._GetCredentials( HOST )
+        
+        query['db'] = db
 
         #Connect to the Postgres Server
-        self.session = PGsession.__init__(self,query,'ManageRegion')
+        self._Connect(query)
+        
+        # Set verbosiry
         
         self.verbose = verbose
-
-
-    def _SelectMultiRecs(self, queryD, paramL, table, schema='regions', asdict=False):
+        
+    def _MultiSearchRecs(self, queryD, paramL, table, schema='regions', asdict=False):
         ''' Select multiple records
         '''
         return self._MultiSearch( queryD, paramL, schema, table)            
@@ -110,7 +297,6 @@ class ManageRegion(PGsession):
             
             exit(exitstr)
 
-
     def _Insert1DegDefRegion(self, query):
         '''
         '''
@@ -128,7 +314,6 @@ class ManageRegion(PGsession):
             exit(exitstr)
             
         self._CheckInsertSingleRecord(query,'system','defregions')
-
 
     def _InsertDefRegion(self, layer, query, bounds, llD, overwrite, delete):
         '''
@@ -310,7 +495,6 @@ class ManageRegion(PGsession):
         #comp['system'] = system
         return SelectComp(self, comp)
 
-
     def _LoadBulkDefregions(self,tmpFPN):
         #self._DeleteSRTMBulkTiles(params)
         #query = {'tmpFPN':tmpFPN, 'items': ",".join(headL)}
@@ -336,3 +520,76 @@ class ManageRegion(PGsession):
                 next(f)  # Skip the header row.
             self.cursor.copy_from(f, 'system.regions', sep=',')
             self.conn.commit()
+          
+    def _SelectTileCoords(self, system, paramL):
+        '''
+        '''
+        cols = ",".join(paramL)
+        
+        queryD = {'cols':cols,'schema':system}
+        
+        sql = "SELECT %(cols)s FROM %(schema)s.tilecoords;" %queryD
+        
+        if self.verbose > 2:
+            
+            print (sql)
+        
+        self.cursor.execute( sql )
+        
+        records = self.cursor.fetchall()
+        
+        return records
+
+    def _SelectDefaultRegionLayers(self, system, wherestatement = '' ):
+        '''
+        '''
+        
+        query = {'schema': system, 'table':'regions', 'where':wherestatement}
+        
+        if wherestatement == '':
+            
+            sql = "SELECT regioncat, regionid FROM system.defregions;"
+            
+            sql = "SELECT R.regioncat, R.regionid, L.compid, L.source, L.product,\
+                D.content, D.layerid, D.prefix, L.suffix, L.acqdatestr FROM system.defregions\
+                R LEFT JOIN system.layer L ON (R.regionid = L.regionid)\
+                LEFT JOIN system.compdef D ON (L.compid = D.compid);"
+            
+        else:
+            
+            sql = "SELECT R.regioncat, R.regionid, L.compid, L.source, L.product,\
+                D.content, D.layerid, D.prefix, L.suffix, L.acqdatestr FROM system.defregions R\
+                LEFT JOIN system.regions S ON (R.regionid = S.regionid)\
+                LEFT JOIN system.layer L ON (R.regionid = L.regionid)\
+                LEFT JOIN system.compdef D ON (L.compid = D.compid)\
+                LEFT JOIN %(schema)s.%(table)s M ON (R.regionid = M.regionid)\
+                WHERE %(where)s;" %query
+                
+                
+            #sql = "SELECT DISTINCT R.regioncat, R.regionid FROM system.defregions R LEFT JOIN %(schema)s.%(table)s M ON (R.regionid = M.regionid) WHERE %(where)s;" %query
+         
+        if self.verbose > 1:
+            
+            print (sql)
+            
+            self.cursor.execute( sql )
+                
+            return self.cursor.fetchall()
+                
+    def _SelectTilesWithinWSEN(self, system, paramL, west, south, east, north):
+        '''
+        '''
+        
+        cols = ",".join(paramL)
+        
+        query = {'schema':system,'cols':cols, 'west':west, 'south':south,'east':east,'north':north}
+        
+        sql = "SELECT %(cols)s FROM %(schema)s.tilecoords WHERE east > %(west)s AND west < %(east)s AND north > %(south)s AND south < %(north)s;" %query
+
+        self.cursor.execute( sql )
+
+        records = self.cursor.fetchall()
+        
+        return records
+    
+    

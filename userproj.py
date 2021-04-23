@@ -17,16 +17,24 @@ class ManageUserProj(PGsession):
     '''
     DB support for setting up processes
     '''
-    def __init__(self):
+    def __init__(self, db):
         """ The constructor connects to the database"""
         
+        
+        # Initiate the Postgres session
+        self.session = PGsession.__init__(self,'ManageUserProj')
+                
+        # Set the HOST name for this process
         HOST = 'karttur'
         
+        # Get the credentioals for the HOST
         query = self._GetCredentials( HOST )
+        
+        query['db'] = db
 
         #Connect to the Postgres Server
-        self.session = PGsession.__init__(self,query,'UserLocale')
-
+        self._Connect(query)
+        
     def _ManageDefRegProjTractSite(self,queryD):
         '''
         '''

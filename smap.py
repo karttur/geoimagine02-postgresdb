@@ -10,7 +10,9 @@ from geoimagine.postgresdb import PGsession
 
 from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
 
-class ManageSMAP(PGsession):
+from .hdfstuff import ManageHdf
+
+class ManageSMAP(PGsession, ManageHdf):
     '''
     DB support for setting up processes
     '''
@@ -18,62 +20,42 @@ class ManageSMAP(PGsession):
     def __init__(self, db):
         """ The constructor connects to the database"""
         
+        # Initiate the ManageHdfcommon functions
+        ManageHdf.__init__(self)
+        
+        # Initiate the Postgres session
+        self.session = PGsession.__init__(self,'ManageMODIS')
+                
+        # Set the HOST name for this process
         HOST = 'karttur'
         
+        # Get the credentioals for the HOST
         query = self._GetCredentials( HOST )
+        
+        query['db'] = db
 
         #Connect to the Postgres Server
-        self.session = PGsession.__init__(self,query,'ManageSMAP')
+        self._Connect(query)
 
-    def _InsertSmapData(self,queryD):
+    def _InsertDaacData(self,queryD):
+        ''' Insert SMAP online hdf file
+        '''
+        self._CheckInsertSingleRecord(queryD,'smap', 'daacdata', [('filename',)])
+
+    def _UpdateDaacStatus(self, queryD):
         '''
         '''
-        rec = self._CheckInsertSingleRecord(queryD,'smap', 'daacdata', [('smapid',),('product',),('version',)])
+        
+        queryD['schema'] = 'smap'
+        
+        self._UpdateHdfStatus(queryD)
 
-    def _SelectSmapData(self,period,params,statusD):
+    def _SelectHdfTemplate(self,query,paramL):
         '''
         '''
-        queryD = {}
-
-        queryD['product'] = {'val':params.product, 'op':'=' }
         
-        queryD['version'] = {'val':params.version, 'op':'=' }
-
-        for status in statusD:
-            
-            queryD[status] = {'val':statusD[status], 'op':'=' }
-            
-        queryD['acqdate'] = {'val':period.startdate, 'op':'>=' }
-        
-        queryD['#acqdate'] = {'val':period.enddate, 'op':'<=' }
-        
-        if period.enddoy > 0 and period.enddoy > period.startdoy:
-            
-            queryD['doy'] = {'val':period.startdoy, 'op':'>=' }
-            
-            queryD['#doy'] = {'val':period.enddoy, 'op':'<=' }
-
-        wherestr = self._DictToSelect(queryD)
-
-        query = "SELECT smapfilename, smapid, source, product, version, folder, acqdate FROM smap.daacdata \
-                %s;" %(wherestr)
-        
-        if self.verbose > 1:
-            
-            print (query)
-            
-        self.cursor.execute(query)
-        
-        return self.cursor.fetchall()
-
-    def _UpdateSmapStatus(self, queryD):
-        query = "UPDATE smap.daacdata SET %(column)s = '%(status)s' WHERE smapid = '%(smapid)s'" %queryD
-        self.cursor.execute(query)
-        self.conn.commit()
-
-    def _SelectTemplateLayersOnSource(self,query,paramL):
-        return self._MultiSearch(query, paramL, 'smap', 'template')
-
+        return self._SelectTemplate(query,paramL,'smap')
+      
     def _SelectSingleSMAPDaacTile(self, queryD, paramL):
         return self._SingleSearch(queryD, paramL, 'smap','daacdata')
 
@@ -88,40 +70,3 @@ class ManageSMAP(PGsession):
 
     def _SelectComp(self, compQ):
         return SelectComp(self, compQ)
-
-
-
-    def _SelectCompOld(self, system, compQ):
-
-
-        '''This is identical to came def in ancillary - mshould be joined
-        '''
-        querystem = 'SELECT C.source, C.product, B.folder, B.band, B.prefix, C.suffix, C.masked, C.cellnull, C.celltype, B.measure, B.scalefac, B.offsetadd, B.dataunit '
-        query ='FROM %(system)s.compdefs AS B ' %compQ
-        querystem = '%s %s ' %(querystem, query)
-        query ='INNER JOIN %(system)s.compprod AS C ON (B.compid = C.compid)' %compQ
-        querystem = '%s %s ' %(querystem, query)
-        #query = {'system':system,'id':compid}
-        querypart = "WHERE B.folder = '%(folder)s' AND B.band = '%(band)s'" %compQ
-        querystem = '%s %s' %(querystem, querypart)
-        print ('querystem',querystem)
-        self.cursor.execute(querystem)
-        records = self.cursor.fetchall()
-        params = ['source', 'product', 'folder', 'band', 'prefix', 'suffix', 'masked', 'cellnull', 'celltype', 'measure', 'scalefac', 'offsetadd', 'dataunit']
-
-        if len(records) == 1:
-            return dict(zip(params,records[0]))
-        elif len(records) > 1:
-            querypart = "AND C.suffix = '%(suffix)s'" %compQ
-            querystem = '%s %s' %(querystem, querypart)
-            print ('querystem',querystem)
-            self.cursor.execute(querystem)
-            records = self.cursor.fetchall()
-            if len(records) == 1:
-                return dict(zip(params,records[0]))
-            else:
-                print ('querystem',querystem)
-                ERRORINANCILLARY
-        else:
-            print ('querystem',querystem)
-            ERRORINANCILLARY

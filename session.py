@@ -4,21 +4,162 @@ Created on 21 feb. 2018
 @author: thomasgumbricht
 '''
 
-import psycopg2
-from base64 import b64decode
+# Standard library imports
+
+import netrc
+
+from base64 import b64encode, b64decode
+
 from string import whitespace
 
-class PGsession:
+# Third party imports
+
+import psycopg2
+
+class CommonSearch():
+    '''
+    '''
+    
+    def __init__(self):
+        '''
+        '''
+        
+        pass
+                 
+                 
+    def _SingleSearch(self,queryD, paramL, schema, table):
+        #self._GetTableKeys(schema, table)
+        selectQuery = {}
+        for item in queryD:
+
+            if isinstance(queryD[item],dict):
+                #preset operator and value
+                selectQuery[item] = queryD[item]
+            else:
+                selectQuery[item] = {'op':'=', 'val':queryD[item]}
+        wherestatement = self._DictToSelect(selectQuery)  
+        cols =  ','.join(paramL)
+        selectQuery = {'schema':schema, 'table':table, 'select': wherestatement, 'cols':cols}
+        
+        sql = "SELECT %(cols)s FROM %(schema)s.%(table)s %(select)s" %selectQuery
+
+        self.cursor.execute(sql)
+        
+        self.record = self.cursor.fetchone()
+        
+        if self.record == None:
+            
+            inforstr = '            %s' %(sql)
+            
+            print (inforstr)
+            
+        return self.record
+          
+    def _MultiSearch(self,queryD, paramL, schema, table):  
+        ''' Select multiple records from any schema.table
+        '''
+
+        selectQuery = {}
+        for item in queryD:
+
+            if isinstance(queryD[item],dict):
+                #preset operator and value
+                selectQuery[item] = queryD[item]
+            else:
+                selectQuery[item] = {'op':'=', 'val':queryD[item]}
+        wherestatement = self._DictToSelect(selectQuery) 
+
+        if len(paramL) == 1:
+            cols = paramL[0]
+        else:
+            cols =  ','.join(paramL)
+        selectQuery = {'schema':schema, 'table':table, 'select': wherestatement, 'cols':cols}      
+        query = "SELECT %(cols)s FROM %(schema)s.%(table)s %(select)s" %selectQuery
+ 
+        if self.verbose > 1:
+        
+            print (query)
+        
+        self.cursor.execute(query)
+        
+        self.records = self.cursor.fetchall()
+        
+        return self.records 
+
+    def _SelectAdjacentTiles(self, regionid, centertile, paramL, schema, table):
+        '''
+        '''
+        selectQuery = {}
+                
+        selectQuery['regionid'] = {'op':'=', 'val':regionid}
+        
+        if schema == 'modis':
+            
+            tileid = ['htile','vtile']
+            
+        elif schema[0:4] == 'ease':
+            
+            tileid = ['xtile','ytile']
+            
+            
+        selectQuery[ tileid[0] ] = {'op':'>=', 'val':centertile[0]-1}
+        
+        selectQuery[ tileid[0] ] = {'op':'<=', 'val':centertile[0]+1}
+        
+        selectQuery[ tileid[1] ] = {'op':'>=', 'val':centertile[1]-1}
+        
+        selectQuery[ tileid[1] ] = {'op':'<=', 'val':centertile[1]+1}
+        
+
+        wherestatement = self._DictToSelect(selectQuery) 
+
+        if len(paramL) == 1:
+            cols = paramL[0]
+        else:
+            cols =  ','.join(paramL)
+        selectQuery = {'schema':schema, 'table':table, 'select': wherestatement, 'cols':cols}      
+        query = "SELECT %(cols)s FROM %(schema)s.%(table)s %(select)s" %selectQuery
+ 
+        if self.verbose > 1:
+        
+            print (query)
+        
+        self.cursor.execute(query)
+        
+        self.records = self.cursor.fetchall()
+        
+        return self.records
+
+class PGsession(CommonSearch):
     '''
     Connects the postgres database.
     '''
 
-    def __init__(self, query, name='unknown'):
+    def __init__(self, name='unknown'):
         '''
         Constructor that opens the session, expects a dictionary with keys for 'db', 'user' and 'pswd', and a
         name [optional]
         '''
-
+        self.name = name
+        
+        CommonSearch.__init__(self)
+        
+    def _GetCredentials(self, HOST):
+        ''' Get the credentiials using netrc
+        '''
+                
+        secrets = netrc.netrc()
+        
+        username, account, password = secrets.authenticators( HOST )
+        
+        pswd = b64encode(password.encode())
+        
+        #create a query dictionary for connecting to the Postgres server
+        return {'user':username,'pswd':pswd, 'account':account}
+        
+    def _Connect(self,query):
+        '''
+        '''
         query['pswd'] = b64decode(query['pswd']).decode('ascii')
         
         conn_string = "host='localhost' dbname='%(db)s' user='%(user)s' password='%(pswd)s'" %query
@@ -26,10 +167,9 @@ class PGsession:
         self.conn = psycopg2.connect(conn_string)
         
         self.cursor = self.conn.cursor() 
-        
-        self.name = name
-        
+
         self.verobse = 0
+        
         
     def _Close(self):
         '''
@@ -135,7 +275,7 @@ class PGsession:
 
         return rec
             
-    def _SingleSearch(self,queryD, paramL, schema, table):
+    def _SingleSearchOld(self,queryD, paramL, schema, table):
         #self._GetTableKeys(schema, table)
         selectQuery = {}
         for item in queryD:
@@ -159,7 +299,7 @@ class PGsession:
         self.records = self.cursor.fetchone()
         return self.records
 
-    def _MultiSearch(self, queryD, paramL, schema, table):
+    def _MultiSearchOld(self, queryD, paramL, schema, table):
         #self._GetTableKeys(schema, table)
         '''
         queryD = {}
@@ -327,19 +467,24 @@ class PGsession:
                 WHERE compid = '%(compid)s' AND suffix = '%(suffix)s';" %query)        
         return rec
         
-    def IniSelectScaling(self, compD):
-        compid = '%(f)s_%(b)s' %{'f':compD['folder'].lower(),'b':compD['band'].lower()}
-        query = {'compid':compid,'source':compD['source'], 
-                 'product':compD['product'], 
-                 'suffix':compD['suffix']}
+    def IniSelectScaling(self, comp):
+        '''
+        '''
+        compid = '%(f)s_%(b)s' %{'f':comp.content.lower(),'b':comp.layerid.lower()}
+        
+        query = {'compid':compid,'source':comp.source, 
+                 'product':comp.product, 
+                 'suffix':comp.suffix}
         paramL = ['power', 'powerna', 'mirror0', 'scalefac' ,'offsetadd', 'srcmin','srcmax','dstmin','dstmax']
+        
         rec = self._SelectLayoutItem(query,paramL,'scaling')
+        
         if rec == None:
             
             exitstr = 'No scaling for compid %s' %(compid)
-            print (exitstr)
-            ADDSCALING
+
             exit(exitstr)
+            
         scalingD = dict(zip(paramL,rec))
         for item in scalingD:
             if scalingD[item] == 'N':

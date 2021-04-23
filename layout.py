@@ -16,12 +16,19 @@ class ManageLayout(PGsession):
     def __init__(self, db):
         """ The constructor connects to the database"""
         
+        # Initiate the Postgres session
+        self.session = PGsession.__init__(self,'ManageLayout')
+                
+        # Set the HOST name for this process
         HOST = 'karttur'
         
+        # Get the credentioals for the HOST
         query = self._GetCredentials( HOST )
+        
+        query['db'] = db
 
         #Connect to the Postgres Server
-        self.session = PGsession.__init__(self,query, 'ManageLayout')
+        self._Connect(query)
 
     def _ManageRasterPalette(self, queryD, colorD, overwrite, delete):
         '''

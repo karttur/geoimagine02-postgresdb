@@ -8,38 +8,31 @@ Created on 8 mars 2018
 
 from geoimagine.postgresdb import PGsession
 
-from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp
+from geoimagine.postgresdb.compositions import InsertCompDef, InsertCompProd, InsertLayer, SelectComp, SelectCompleteComp
  
-
 class ManageAncillary(PGsession):
     '''
     DB support for managing regions
     '''
+    
     def __init__(self, db):
+        """ The constructor connects to the database"""
         
-        """The constructor connects to the database"""
-        
+        # Initiate the Postgres session
+        self.session = PGsession.__init__(self,'ManageAncillary')
+                
+        # Set the HOST name for this process
         HOST = 'karttur'
         
+        # Get the credentioals for the HOST
         query = self._GetCredentials( HOST )
         
-        '''
-        secrets = netrc.netrc()
-        
-        username, account, password = secrets.authenticators( HOST )
-        
-        pswd = b64encode(password.encode())
-        
-        #create a query dictionary for connecting to the Postgres server
-        query = {'db':db,'user':username,'pswd':pswd}
-        '''
-        
+        query['db'] = db
+
         #Connect to the Postgres Server
-        
-        self.session = PGsession.__init__(self,query,'ManageAncillary')
-        
-        
-    def _SelectMulti(self, queryD, paramL, table, schema:'ancillary'):
+        self._Connect(query)
+                
+    def _AncillaryMultiSearch(self, queryD, paramL, schema, table):
         '''
         '''
         return self._MultiSearch(queryD, paramL, schema, table)
@@ -123,6 +116,14 @@ class ManageAncillary(PGsession):
         '''
         
         InsertLayer(self,layer,overwrite,delete)
+        
+        
+    def _RetrieveLayerComp(self, queryD, searchItemL):
+        '''
+        '''
+        
+        SelectCompleteComp(self, 'ancillary', queryD, searchItemL)
+        
 
     def _LinkDsCompid(self,dsid,compid,overwrite,delete):
         '''

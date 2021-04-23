@@ -26,7 +26,7 @@ class SelectProcess(PGsession):
         self.session = PGsession.__init__(self,query,'SelectProcess')
         
     
-    def _SelectMultiRecs(self, queryD, paramL, table, schema='process'):
+    def _MultiSearchRecs(self, queryD, paramL, table, schema='process'):
         ''' Select multiple records
         '''
         
@@ -103,12 +103,19 @@ class ManageProcess(PGsession):
     def __init__(self, db):
         """ The constructor connects to the database"""
         
+        #Connect to the Postgres Server
+        self.session = PGsession.__init__(self,'ManageProcess')
+                
+        # Set the HOST name for this process
         HOST = 'karttur'
         
+        # Get the credentioals for the HOST
         query = self._GetCredentials( HOST )
+        
+        query['db'] = db
 
         #Connect to the Postgres Server
-        self.session = PGsession.__init__(self,query,'ManageProcess')
+        self._Connect(query)
 
     def _ManageRootProcess(self, process, queryD):
         ''' Insert, update or delete root process
@@ -234,12 +241,17 @@ class ManageProcess(PGsession):
         # if no record exists and not delete
         if records == None and not process.delete:
                             
-            # Check that the name of the subprocess does not already exist   
-            self.cursor.execute("SELECT rootprocid FROM process.subprocesses WHERE subprocid = '%(subprocid)s' AND version = '%(version)s';" %queryD)
+            # Check that the name of the subprocess does not already exist  
+            
+            sql =  "SELECT rootprocid FROM process.subprocesses WHERE subprocid = '%(subprocid)s' AND version = '%(version)s';" %queryD
+            
+            self.cursor.execute( sql )
                 
             record = self.cursor.fetchone()
             
             if record:
+                
+                print (sql)
                 
                 exitstr = 'EXITING - the subprocess %s is already defined, but under root %s (%s)' %(process.paramsD['subprocid'],record[0],process.paramsD['rootprocid'])
                 
@@ -367,12 +379,8 @@ class ManageProcess(PGsession):
                 
                 if not bandid:
                     
-                    exitstr = 'All compositions must have a bandid (defaultvalue) %(rootprocid)s %(subprocid)s ' %queryD
-    
-                    print (exitstr)
+                    exitstr = 'All compositions must have a layerid/bandid (the defaultvalue must be set) %(rootprocid)s %(subprocid)s ' %queryD
                     
-                    SNULLE
-                
                     exit(exitstr)
             
             if not hasattr(node, 'parameter'):
@@ -388,13 +396,16 @@ class ManageProcess(PGsession):
                 exit(exitstr)
                 
             try:
+                
                 for param in node.parameter:
-                    
+                                        
                     pass
                     
             except:
                 
-                exitstr = 'EXITING - Error in "nodes - parameter" most likely no list (array) set\n    for  %(rootprocid)s %(subprocid)s ' %queryD
+                exitstr = 'Error in "nodes - parameter" at node.parent/element: %s / %s, or no list (array) set ' %(node.parent, node.element)
+                
+                exitstr += '\n    for  %(rootprocid)s %(subprocid)s ' %queryD
     
                 exit (exitstr)
                                 
@@ -459,17 +470,26 @@ class ManageProcess(PGsession):
                 records = self.cursor.fetchone()
     
                 if records == None:
-                                      
-                    sql = "INSERT INTO process.processparams (rootprocid, subprocid, version, parent, element, paramid, paramtyp, required, defaultvalue, hint, bandid) VALUES \
+                                    
+                    try:  
+                        sql = "INSERT INTO process.processparams (rootprocid, subprocid, version, parent, element, paramid, paramtyp, required, defaultvalue, hint, bandid) VALUES \
                             ('%(rootprocid)s','%(subprocid)s','%(version)s','%(parent)s','%(element)s','%(paramid)s','%(paramtyp)s','%(required)s','%(defaultvalue)s','%(hint)s','%(bandid)s');" %qpD
                             
-                    self.cursor.execute(sql)
+                        self.cursor.execute(sql)
                     
-                    self.conn.commit()
+                        self.conn.commit()
+                        
+                    except:
+                        
+                        exitstr = 'EXITING, failed sql\n%s' %(sql)
+                        
+                        exit ( exitstr )
                     
                 try:
+                    
                     for setValue in setValueL:
-                        print (setValue)
+                        
+                        pass
                         
                 except:
                     exitstr = 'EXITING - setValue Error for  %(rootprocid)s %(subprocid)s %(paramid)s' %qpD
@@ -529,7 +549,6 @@ class ManageProcess(PGsession):
             wherestatement = self.session._DictToSelect(selectQuery)
         else:
             wherestatement = ''
-        print ('wherestatement',wherestatement)
 
         querystem = '%s %s;' %(querystem, wherestatement)
 
@@ -548,7 +567,7 @@ class ManageProcess(PGsession):
             wherestatement = self._DictToSelect(selectQuery)
         else:
             wherestatement = ''
-        print ('wherestatement',wherestatement)
+
 
         querystem = '%s %s;' %(querystem, wherestatement)
 
@@ -567,7 +586,6 @@ class ManageProcess(PGsession):
             wherestatement = self._DictToSelect(selectQuery)
         else:
             wherestatement = ''
-        print ('wherestatement',wherestatement)
 
         querystem = '%s %s;' %(querystem, wherestatement)
 
